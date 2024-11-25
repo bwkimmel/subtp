@@ -120,7 +120,7 @@ peg::parser! {
 
         /// Multiple lines.
         rule multiline() -> Vec<String>
-            = !(whitespace() / newline()) lines:$(!(whitespace()+ newline()) (!newline() [_])+ newline()) ++ ()
+            = lines:$(!(whitespace()+ newline()) (!newline() [_])+ newline()) ** ()
             {
                 lines
                     .iter()
@@ -423,7 +423,7 @@ peg::parser! {
         pub(crate) rule region_scroll() -> Scroll
             = "scroll:up" { Scroll::Up }
 
-         rule cue_block() -> VttBlock
+        rule cue_block() -> VttBlock
             = cue:cue() { cue.into() }
 
         rule comment_block() -> VttBlock
@@ -886,6 +886,31 @@ mod test {
             }
         );
 
+        // Empty
+        assert_eq!(
+            vtt_parser::cue("00:00:00.000 --> 00:00:01.000\n")
+                .unwrap(),
+            VttCue {
+                identifier: None,
+                timings: VttTimings {
+                    start: VttTimestamp {
+                        hours: 0,
+                        minutes: 0,
+                        seconds: 0,
+                        milliseconds: 0,
+                    },
+                    end: VttTimestamp {
+                        hours: 0,
+                        minutes: 0,
+                        seconds: 1,
+                        milliseconds: 0,
+                    },
+                },
+                settings: None,
+                payload: vec![],
+            }
+        );
+
         // With identifier
         assert_eq!(
             vtt_parser::cue(
@@ -1034,12 +1059,21 @@ mod test {
         );
 
         assert_eq!(
+            vtt_parser::comment("NOTE\n comment\nmultiline\n").unwrap(),
+            VttComment::Below("comment\nmultiline".to_string())
+        );
+
+        assert_eq!(
+            vtt_parser::comment("NOTE \n").unwrap(),
+            VttComment::Below("".to_string())
+        );
+
+        assert_eq!(
             vtt_parser::comment("NOTE comment\nacross line\n").unwrap(),
             VttComment::Side("comment\nacross line".to_string())
         );
 
         assert!(vtt_parser::comment("NOTE").is_err());
-        assert!(vtt_parser::comment("NOTE \n").is_err());
         assert!(vtt_parser::comment("NOTE_Comment\n").is_err());
         assert!(vtt_parser::comment("NOTE\n\n").is_err());
     }
@@ -1331,6 +1365,9 @@ mod test {
 00:01.000 --> 00:04.000
 - Never drink liquid nitrogen.
 
+00:04.000 --> 00:05.000
+
+
 00:05.000 --> 00:09.000
 - It will perforate your stomach.
 - You could die.
@@ -1359,6 +1396,26 @@ mod test {
                     },
                     settings: None,
                     payload: vec!["- Never drink liquid nitrogen.".to_string()],
+                }
+                .into(),
+                VttCue {
+                    identifier: None,
+                    timings: VttTimings {
+                        start: VttTimestamp {
+                            hours: 0,
+                            minutes: 0,
+                            seconds: 4,
+                            milliseconds: 0,
+                        },
+                        end: VttTimestamp {
+                            hours: 0,
+                            minutes: 0,
+                            seconds: 5,
+                            milliseconds: 0,
+                        },
+                    },
+                    settings: None,
+                    payload: vec![],
                 }
                 .into(),
                 VttCue {
