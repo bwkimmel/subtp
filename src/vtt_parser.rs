@@ -120,7 +120,7 @@ peg::parser! {
 
         /// Multiple lines.
         rule multiline() -> Vec<String>
-            = lines:$(!(whitespace()+ newline()) (!newline() [_])+ newline()) ** ()
+            = lines:$((!newline() [_])+ newline()) ** ()
             {
                 lines
                     .iter()
@@ -908,6 +908,31 @@ mod test {
                 },
                 settings: None,
                 payload: vec![],
+            }
+        );
+
+        // Includes whitespace-only line.
+        assert_eq!(
+            vtt_parser::cue("00:00:00.000 --> 00:00:01.000\nHello, world!\n \n")
+                .unwrap(),
+            VttCue {
+                identifier: None,
+                timings: VttTimings {
+                    start: VttTimestamp {
+                        hours: 0,
+                        minutes: 0,
+                        seconds: 0,
+                        milliseconds: 0,
+                    },
+                    end: VttTimestamp {
+                        hours: 0,
+                        minutes: 0,
+                        seconds: 1,
+                        milliseconds: 0,
+                    },
+                },
+                settings: None,
+                payload: vec!["Hello, world!".to_string(), "".to_string()],
             }
         );
 
