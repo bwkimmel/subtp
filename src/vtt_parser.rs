@@ -294,7 +294,7 @@ peg::parser! {
         /// Minimal cue block
         rule cue_minimal() -> VttCue
             = whitespace()* timings:timings() whitespace()* newline()
-                whitespace()* payload:multiline()
+                payload:multiline()
             {
                 VttCue {
                     identifier: None,
@@ -308,7 +308,7 @@ peg::parser! {
         rule cue_with_identifier() -> VttCue
             = whitespace()* identifier:line()
                 whitespace()* timings:timings() whitespace()* newline()
-                whitespace()* payload:multiline()
+                payload:multiline()
             {
                 VttCue {
                     identifier: Some(identifier),
@@ -321,7 +321,7 @@ peg::parser! {
         /// Cue block with settings.
         rule cue_with_settings() -> VttCue
             = whitespace()* timings:timings() whitespace()+ settings:cue_settings() whitespace()* newline()
-                whitespace()* payload:multiline()
+                payload:multiline()
             {
                 VttCue {
                     identifier: None,
@@ -335,7 +335,7 @@ peg::parser! {
         rule cue_with_identifier_and_settings() -> VttCue
             = whitespace()* identifier:line()
                 whitespace()* timings:timings() whitespace()+ settings:cue_settings() whitespace()* newline()
-                whitespace()* payload:multiline()
+                payload:multiline()
             {
                 VttCue {
                     identifier: Some(identifier),
@@ -911,7 +911,32 @@ mod test {
             }
         );
 
-        // Includes whitespace-only line.
+        // Includes leading whitespace-only line.
+        assert_eq!(
+            vtt_parser::cue("00:00:00.000 --> 00:00:01.000\n \nHello, world!\n")
+                .unwrap(),
+            VttCue {
+                identifier: None,
+                timings: VttTimings {
+                    start: VttTimestamp {
+                        hours: 0,
+                        minutes: 0,
+                        seconds: 0,
+                        milliseconds: 0,
+                    },
+                    end: VttTimestamp {
+                        hours: 0,
+                        minutes: 0,
+                        seconds: 1,
+                        milliseconds: 0,
+                    },
+                },
+                settings: None,
+                payload: vec!["".to_string(), "Hello, world!".to_string()],
+            }
+        );
+
+        // Includes trailing whitespace-only line.
         assert_eq!(
             vtt_parser::cue("00:00:00.000 --> 00:00:01.000\nHello, world!\n \n")
                 .unwrap(),
