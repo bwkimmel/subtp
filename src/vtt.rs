@@ -911,7 +911,7 @@ impl Display for VttTimings {
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct VttTimestamp {
     /// The hours.
-    pub hours: u8,
+    pub hours: u32,
     /// The minutes.
     pub minutes: u8,
     /// The seconds.
@@ -949,7 +949,7 @@ impl From<Duration> for VttTimestamp {
         let seconds = duration.as_secs();
         let milliseconds = duration.subsec_millis() as u16;
 
-        let hours = (seconds / 3600) as u8;
+        let hours = (seconds / 3600) as u32;
         let minutes = ((seconds % 3600) / 60) as u8;
         let seconds = (seconds % 60) as u8;
 

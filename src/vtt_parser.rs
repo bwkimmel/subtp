@@ -50,6 +50,12 @@ peg::parser! {
                 n.parse().or(Err("two-digit number"))
             }
 
+        /// Two-or-more digit number
+        rule two_or_more_number() -> u32
+            = n:$(['0'..='9']['0'..='9']+) {?
+                n.parse().or(Err("two-or-more digit number"))
+            }
+
         /// Three-digit number.
         rule three_number() -> u16
             = n:$(['0'..='9']['0'..='9']['0'..='9']) {?
@@ -135,7 +141,7 @@ peg::parser! {
 
         /// Timestamp with hours.
         rule timestamp_with_hours() -> VttTimestamp
-            = hours:two_number() ":" minutes:two_number() ":" seconds:two_number() "." milliseconds:three_number()
+            = hours:two_or_more_number() ":" minutes:two_number() ":" seconds:two_number() "." milliseconds:three_number()
             {
                 VttTimestamp {
                     hours,
@@ -538,7 +544,6 @@ mod test {
         );
 
         // Invalid digits.
-        assert!(vtt_parser::timestamp("000:00:00.000").is_err());
         assert!(vtt_parser::timestamp("00:000:00.000").is_err());
         assert!(vtt_parser::timestamp("00:00:000.000").is_err());
         assert!(vtt_parser::timestamp("00:00:00.0000").is_err());
@@ -608,6 +613,29 @@ mod test {
         );
 
         assert!(vtt_parser::timings("00:00.000 -->\n00:00:01.000").is_err());
+    }
+
+    #[test]
+    fn long_timings() {
+        let expected = VttTimings {
+            start: VttTimestamp {
+                hours: 100,
+                minutes: 0,
+                seconds: 0,
+                milliseconds: 0,
+            },
+            end: VttTimestamp {
+                hours: 99999,
+                minutes: 0,
+                seconds: 0,
+                milliseconds: 0,
+            },
+        };
+
+        assert_eq!(
+            vtt_parser::timings("100:00:00.000 --> 99999:00:00.000").unwrap(),
+            expected
+        )
     }
 
     #[test]
